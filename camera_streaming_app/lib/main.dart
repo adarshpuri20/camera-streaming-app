@@ -48,29 +48,29 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _startStreaming() async {
     // TEMP: still hard‑coded until backend is ready
     const url = 'wss://livekit.mayacam.link';
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGl0eSI6IiIsIm5hbWUiOiIiLCJ2aWRlbyI6eyJyb29tQ3JlYXRlIjpmYWxzZSwicm9vbUxpc3QiOmZhbHNlLCJyb29tUmVjb3JkIjpmYWxzZSwicm9vbUFkbWluIjpmYWxzZSwicm9vbUpvaW4iOnRydWUsInJvb20iOiJ0ZXN0LXJvb20iLCJjYW5QdWJsaXNoIjp0cnVlLCJjYW5TdWJzY3JpYmUiOnRydWUsImNhblB1Ymxpc2hEYXRhIjp0cnVlLCJjYW5QdWJsaXNoU291cmNlcyI6W10sImNhblVwZGF0ZU93bk1ldGFkYXRhIjpmYWxzZSwiaW5ncmVzc0FkbWluIjpmYWxzZSwiaGlkZGVuIjpmYWxzZSwicmVjb3JkZXIiOmZhbHNlLCJhZ2VudCI6ZmFsc2V9LCJtZXRhZGF0YSI6IiIsInNoYTI1NiI6IiIsInN1YiI6InVzZXItMTIzIiwiaXNzIjoiZGV2a2V5IiwibmJmIjoxNzY0NjQ0OTIzLCJleHAiOjE3NjQ2NjY1MjN9.HThdNowDVjQmhd16jiBdM9hSFzIKH2aWOBVOI5cYgJI';
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6InRlc3Qtcm9vbSIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWV9LCJzdWIiOiJ1c2VyLTEyMyIsImlzcyI6ImRldmtleSIsIm5iZiI6MTc2NDY2MzE5NiwiZXhwIjoxNzY0NzQ5NTk2fQ.K_fQEI9VZefEK7XrhRH2GjEsTxwRn3thFte0jIhUoSM';
 
   try {
     final room = Room();
     
     // Add listener for connection state
     room.addListener(() {
-      print('🔗 Room state: ${room.connectionState}');
+      debugPrint'🔗 Room state: ${room.connectionState}');
     });
     
-    print('📡 Connecting to LiveKit...');
+    debugPrint'📡 Connecting to LiveKit...');
     await room.connect(url, token);
-    print('✅ Connected to room: ${room.name}');
+    debugPrint'✅ Connected to room: ${room.name}');
     
     final local = room.localParticipant;
     if (local != null) {
-      print('📹 Enabling camera...');
+      debugPrint'📹 Enabling camera...');
       await local.setCameraEnabled(true);
       
-      print('🎤 Enabling microphone...');
+      debugPrint'🎤 Enabling microphone...');
       await local.setMicrophoneEnabled(true);
       
-      print('🎥 Streaming started!');
+      debugPrint'🎥 Streaming started!');
     }
 
     setState(() {
@@ -79,7 +79,7 @@ class _CameraScreenState extends State<CameraScreen> {
     });
     
   } catch (e) {
-    print('❌ Error starting stream: $e');
+    debugPrint'❌ Error starting stream: $e');
     // Show error to user
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
