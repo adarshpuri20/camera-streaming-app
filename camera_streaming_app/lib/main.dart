@@ -61,7 +61,7 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _startStreaming() async {
     // TEMP: still hard-coded until backend is ready
     const url = 'wss://livekit.mayacam.link';
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6InRlc3Qtcm9vbSIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWV9LCJzdWIiOiJ1c2VyLTEyMyIsImlzcyI6ImRldmtleSIsIm5iZiI6MTc2NDY2ODMyMCwiZXhwIjoxNzY0NzU0NzIwfQ.Z9oC17-zgxPKj41b-KKE74BF2H0IIoGrDSr_IH30c7A';
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6InRlc3Qtcm9vbSIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWV9LCJzdWIiOiJ1c2VyLTEyMyIsImlzcyI6ImRldmtleSIsIm5iZiI6MTc2NDgzNTgwOCwiZXhwIjoxNzY0OTIyMjA4fQ.fHKXCkRVlU4EW82edKBezyOae3d6WofNDjae_ekSIpM';
 
     try {
       final room = Room();
