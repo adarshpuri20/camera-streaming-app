@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 List<CameraDescription> cameras = [];
 
@@ -38,6 +40,10 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Room? _room;
   bool _isStreaming = false;
+  String? _currentEgressId;
+
+  // REPLACE THIS with your EC2 public IP
+  static const String backendHost = 'http://<YOUR-EC2-PUBLIC-IP>:8000';  // <-- UPDATE THIS
 
   @override
   void initState() {
@@ -59,41 +65,66 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _startStreaming() async {
-    // TEMP: still hard-coded until backend is ready
-    const url = 'wss://livekit.mayacam.link';
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6InRlc3Qtcm9vbSIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWV9LCJzdWIiOiJ1c2VyLTEyMyIsImlzcyI6ImRldmtleSIsIm5iZiI6MTc2NDgzNTgwOCwiZXhwIjoxNzY0OTIyMjA4fQ.fHKXCkRVlU4EW82edKBezyOae3d6WofNDjae_ekSIpM';
-
     try {
+      // 1. Call backend to get token + start egress
+      final backendUrl = '$backendHost/live/start';
+      
+      debugPrint('📞 Calling backend: $backendUrl');
+      
+      final resp = await http.post(
+        Uri.parse(backendUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'tenantId': 'tenant1',
+          'siteId': 'site1',
+          'cameraId': 'cam1',
+          'mode': 'record-only',
+        }),
+      );
+
+      if (resp.statusCode != 200) {
+        throw Exception('Backend error: ${resp.statusCode} ${resp.body}');
+      }
+
+      final data = jsonDecode(resp.body);
+      final url = data['url'] as String;
+      final token = data['token'] as String;
+      final roomName = data['room'] as String;
+      final egressId = data['egressId'] as String;
+
+      debugPrint('✅ Backend response: room=$roomName, egressId=$egressId');
+
+      // 2. Connect to LiveKit using backend token
       final room = Room();
 
-      // Add listener for connection state
       room.addListener(() {
-        debugPrint('🔗 Room state: ${room.connectionState}'); // Fixed syntax here
+        debugPrint('🔗 Room state: ${room.connectionState}');
       });
 
-      debugPrint('📡 Connecting to LiveKit...'); // Fixed syntax here
+      debugPrint('📡 Connecting to LiveKit...');
       await room.connect(url, token);
-      debugPrint('✅ Connected to room: ${room.name}'); // Fixed syntax here
+      debugPrint('✅ Connected to room: ${room.name}');
 
+      // 3. Enable camera + mic
       final local = room.localParticipant;
       if (local != null) {
-        debugPrint('📹 Enabling camera...'); // Fixed syntax here
+        debugPrint('📹 Enabling camera...');
         await local.setCameraEnabled(true);
 
-        debugPrint('🎤 Enabling microphone...'); // Fixed syntax here
+        debugPrint('🎤 Enabling microphone...');
         await local.setMicrophoneEnabled(true);
 
-        debugPrint('🎥 Streaming started!'); // Fixed syntax here
+        debugPrint('🎥 Streaming started!');
       }
 
       setState(() {
         _room = room;
         _isStreaming = true;
+        _currentEgressId = egressId;
       });
 
     } catch (e) {
-      debugPrint('❌ Error starting stream: $e'); // Fixed syntax here
-      // Show error to user
+      debugPrint('❌ Error starting stream: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to start stream: $e')),
@@ -103,6 +134,26 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _stopStreaming() async {
+    // 1. Optionally tell backend to stop egress
+    if (_currentEgressId != null) {
+      try {
+        final backendUrl = '$backendHost/live/stop';
+        debugPrint('📞 Calling backend to stop egress: $_currentEgressId');
+        
+        await http.post(
+          Uri.parse(backendUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'egressId': _currentEgressId}),
+        );
+        
+        debugPrint('✅ Backend: egress stop requested');
+      } catch (e) {
+        debugPrint('⚠️ Failed to call /live/stop: $e');
+        // Continue with disconnect anyway
+      }
+    }
+
+    // 2. Disable camera/mic and disconnect
     final local = _room?.localParticipant;
     if (local != null) {
       await local.setCameraEnabled(false);
@@ -113,6 +164,7 @@ class _CameraScreenState extends State<CameraScreen> {
     setState(() {
       _room = null;
       _isStreaming = false;
+      _currentEgressId = null;
     });
   }
 
