@@ -42,8 +42,8 @@ class _CameraScreenState extends State<CameraScreen> {
   bool _isStreaming = false;
   String? _currentEgressId;
 
-  // REPLACE THIS with your EC2 public IP
-  static const String backendHost = 'http://<YOUR-EC2-PUBLIC-IP>:8000';  // <-- UPDATE THIS
+  //Subdomain
+  static const String backendHost = 'https://api.mayacam.link';
 
   @override
   void initState() {
