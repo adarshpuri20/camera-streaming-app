@@ -40,9 +40,9 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Room? _room;
   bool _isStreaming = false;
-  String? _currentEgressId;
+  String? _currentSessionId;  // Changed from _currentEgressId
 
-  //Subdomain
+  // Production backend URL
   static const String backendHost = 'https://api.mayacam.link';
 
   @override
@@ -66,7 +66,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> _startStreaming() async {
     try {
-      // 1. Call backend to get token + start egress
+      // 1. Call backend to create session and get token
       final backendUrl = '$backendHost/live/start';
       
       debugPrint('📞 Calling backend: $backendUrl');
@@ -90,11 +90,12 @@ class _CameraScreenState extends State<CameraScreen> {
       final url = data['url'] as String;
       final token = data['token'] as String;
       final roomName = data['room'] as String;
-      final egressId = data['egressId'] as String;
+      final sessionId = data['sessionId'] as String;  // Changed from egressId
 
-      debugPrint('✅ Backend response: room=$roomName, egressId=$egressId');
+      debugPrint('✅ Backend response: room=$roomName, sessionId=$sessionId');
 
       // 2. Connect to LiveKit using backend token
+      // Egress will start automatically via webhook when we join
       final room = Room();
 
       room.addListener(() {
@@ -114,13 +115,13 @@ class _CameraScreenState extends State<CameraScreen> {
         debugPrint('🎤 Enabling microphone...');
         await local.setMicrophoneEnabled(true);
 
-        debugPrint('🎥 Streaming started!');
+        debugPrint('🎥 Streaming started! Recording will begin automatically.');
       }
 
       setState(() {
         _room = room;
         _isStreaming = true;
-        _currentEgressId = egressId;
+        _currentSessionId = sessionId;  // Store sessionId
       });
 
     } catch (e) {
@@ -134,19 +135,19 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _stopStreaming() async {
-    // 1. Optionally tell backend to stop egress
-    if (_currentEgressId != null) {
+    // 1. Tell backend to stop recording
+    if (_currentSessionId != null) {
       try {
         final backendUrl = '$backendHost/live/stop';
-        debugPrint('📞 Calling backend to stop egress: $_currentEgressId');
+        debugPrint('📞 Calling backend to stop recording: $_currentSessionId');
         
         await http.post(
           Uri.parse(backendUrl),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'egressId': _currentEgressId}),
+          body: jsonEncode({'sessionId': _currentSessionId}),  // Changed from egressId
         );
         
-        debugPrint('✅ Backend: egress stop requested');
+        debugPrint('✅ Backend: recording stop requested');
       } catch (e) {
         debugPrint('⚠️ Failed to call /live/stop: $e');
         // Continue with disconnect anyway
@@ -164,7 +165,7 @@ class _CameraScreenState extends State<CameraScreen> {
     setState(() {
       _room = null;
       _isStreaming = false;
-      _currentEgressId = null;
+      _currentSessionId = null;
     });
   }
 
